@@ -4,7 +4,6 @@
 #include "stdafx.h"
 
 #include "ShadowGesture.h"
-#include "Facerec.h"
 
 int _tmain(int argc, _TCHAR* argv[])
 {
@@ -15,9 +14,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	//sg->trainHMM();
 	//sg->testHMM("../Data/test_sequense.yml");
 	sg->FindConvexityDefects();
-
-	//Facerec facerec("../Data/path_labels.csv");
-
+	
 	return 0;
 }
 

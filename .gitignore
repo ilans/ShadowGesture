@@ -22,6 +22,8 @@ bin/
 ipch/
 Release/
 Debug/
+*/Release/
+*/Debug/
 # OS generated files #
 ######################
 .DS_Store?

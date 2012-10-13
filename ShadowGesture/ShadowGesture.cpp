@@ -548,16 +548,13 @@ Mat ShadowGesture::getPointClusters(Mat& seqs){
 }
 
 void ShadowGesture::FindConvexityDefects(){
-
-	vector
-
-	for(int i=0; i<paths.size(); i++){
 	Mat img = imread("../Data/images/hand127_0.png");
 	imshow("image", img);
 
 
 	cvtColor(img, img, CV_RGB2GRAY);
 	threshold(img, img, 100, 255, THRESH_BINARY);
+//	resize(img, img, Size(20,20));
 
 	Mat img_c = img.clone();
 
@@ -584,24 +581,35 @@ void ShadowGesture::FindConvexityDefects(){
 
 		vector<Point>& points = contours[i];
 		cout << "number of point in the contour:" << points.size() << endl;
+		int largest_defect = -1;
+		int largest_fixpt_depth = -1;
 		for(int j=0; j<defects.size(); j++){
 			Vec4i& defect = defects[j];
-			int start_index = defects[j][0];
-			int end_index = defects[j][1];
-			int farthest_pt_index = defects[j][2];
-			int fixpt_depth = defects[j][3];
+			int start_index = defect[0];
+			int end_index = defect[1];
+			int farthest_pt_index = defect[2];
+			int fixpt_depth = defect[3];
 			cout << "start_index: " << start_index << endl;
 			cout << "end_index: " << end_index << endl;
 			cout << "farthest_pt_index: " << farthest_pt_index << endl;
 			cout << "fixpt_depth: " << fixpt_depth << endl;
 			cout << "--------------------------------------" << endl;
-			if(fixpt_depth>1000){
-				Point middle((points[start_index].x+points[end_index].x)/2,
-						(points[start_index].y+points[end_index].y)/2);
-				line(drawing, points[start_index], points[end_index], Scalar(255,0,255), 2, 8);
-				line(drawing, middle, points[farthest_pt_index], Scalar(0,255,255), 2, 8);
-				circle(drawing, points[farthest_pt_index], 3, Scalar(0,255,255), -1, 8);
+			if(largest_fixpt_depth<fixpt_depth){
+				largest_fixpt_depth = fixpt_depth;
+				largest_defect = j;
 			}
+		}
+		if(largest_defect>=0 && largest_fixpt_depth>1000){
+			Vec4i& defect = defects[largest_defect];
+			int start_index = defect[0];
+			int end_index = defect[1];
+			int farthest_pt_index = defect[2];
+			int fixpt_depth = defect[3];
+			Point middle((points[start_index].x+points[end_index].x)/2,
+						 (points[start_index].y+points[end_index].y)/2);
+			line(drawing, points[start_index], points[end_index], Scalar(255,0,255), 2, 8);
+			line(drawing, middle, points[farthest_pt_index], Scalar(0,255,255), 2, 8);
+			circle(drawing, points[farthest_pt_index], 3, Scalar(0,255,255), -1, 8);
 		}
 	}
 
