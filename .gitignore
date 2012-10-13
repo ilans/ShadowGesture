@@ -1,0 +1,30 @@
+# compiled source #
+###################
+*.dll
+*.exe
+*.pdb
+*.suo
+*.sdf
+*.user
+*.res
+*.lastbuildstate
+*.manifest
+*.log
+*.tlog
+*.rar
+*.zip
+*.opensdf
+####################
+# Directories #
+###############
+Data/
+bin/
+ipch/
+Release/
+Debug/
+# OS generated files #
+######################
+.DS_Store?
+ehthumbs.db
+Icon?
+Thumbs.db
