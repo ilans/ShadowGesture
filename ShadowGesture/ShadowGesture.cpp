@@ -356,25 +356,18 @@ void ShadowGesture::vectorize(){
 		vector<string> seq;
 		(*it) >> seq;
 		for( int i = 0; i < (int)seq.size(); i++ ){
-			Mat image = imread(seq[i]);
-			cvtColor(image, image, CV_BGR2GRAY);
-			threshold( image, image, 100, 1,THRESH_BINARY );
-			resize(image, image, Size(20,20));
-			image = image.reshape(1,1);
-			mat_all.push_back(image);
+			mat_all.push_back(Mat(FindConvexityDefects(seq[i]).t()));
 		}
 	}
 	fs.release();
 
-	Mat mean;
-	pca = PCA(mat_all, mean, CV_PCA_DATA_AS_ROW, 43);
-	//Mat evals = pca.eigenvalues;
-	//Mat evecs = pca.eigenvectors;
-	Mat mat_pca = pca.project(mat_all);
-
 	label_amount = 4;
 	Mat labels;
-	kmeans(mat_pca, label_amount, labels, TermCriteria( CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 100, 0.1), 100, KMEANS_RANDOM_CENTERS, centers);
+
+	mat_all.convertTo(mat_all, CV_32F);
+	normalize(mat_all,mat_all);
+	cout << mat_all << endl;
+	kmeans(mat_all, label_amount, labels, TermCriteria( CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 100, 0.1), 100, KMEANS_RANDOM_CENTERS, centers);
 
 	FileStorage fc("../Data/centers.yml", FileStorage::WRITE);
 	fc << "C" << centers;
@@ -439,23 +432,20 @@ void ShadowGesture::testHMM(string path){
 	FileNode seqs_fs = fs["seqs"];
 	FileNodeIterator it = seqs_fs.begin(), it_end = seqs_fs.end();
 
-	Mat seqs;
+	Mat mat_all;
 	for( ; it != it_end; ++it)
 	{
 		vector<string> seq;
 		(*it) >> seq;
 		for( int i = 0; i < (int)seq.size(); i++ ){
-			Mat image = imread(seq[i]);
-			cvtColor(image, image, CV_BGR2GRAY);
-			threshold( image, image, 100, 1,THRESH_BINARY );
-			resize(image, image, Size(20,20)); 
-			image = image.reshape(1,1);
-			seqs.push_back(image);
+			mat_all.push_back(Mat(FindConvexityDefects(seq[i]).t()));
 		}
 	}
 	fs.release();
 
-	Mat label_vecs = getPointClusters(seqs);
+	mat_all.convertTo(mat_all, CV_32F);
+	normalize(mat_all,mat_all);
+	Mat label_vecs = getPointClusters(mat_all);
 
 	Mat TRANS;
 	Mat EMIS;
@@ -505,15 +495,15 @@ Mat ShadowGesture::getPointClusters(Mat& seqs){
 	fc["C"] >> centers;
 	fc.release();
 
-	Mat mat_pca = pca.project(seqs);
+//	Mat mat_pca = pca.project(seqs);
 
 	const int const clust_num = centers.rows;
 	Mat labels;
 
-	for(int r=0; r<mat_pca.rows; ++r ){
+	for(int r=0; r<seqs.rows; ++r ){
 		vector<double> dist_from_clust;
 		for(int k=0; k<clust_num; ++k ){
-			Mat diff = centers.row(k)-mat_pca.row(r);
+			Mat diff = centers.row(k)-seqs.row(r);
 			dist_from_clust.push_back(sqrt(sum(diff*diff.t())[0]));
 		}
 		int label = min_element(dist_from_clust.begin(),dist_from_clust.end()) - dist_from_clust.begin();
@@ -547,10 +537,11 @@ Mat ShadowGesture::getPointClusters(Mat& seqs){
 	return label_vecs;
 }
 
-void ShadowGesture::FindConvexityDefects(){
-	Mat img = imread("../Data/images/hand127_0.png");
+Vec3f ShadowGesture::FindConvexityDefects(string path){
+	Mat img = imread(path);
 	imshow("image", img);
 
+	Vec3f features(0,0,0); 
 
 	cvtColor(img, img, CV_RGB2GRAY);
 	threshold(img, img, 100, 255, THRESH_BINARY);
@@ -580,36 +571,60 @@ void ShadowGesture::FindConvexityDefects(){
 		drawContours( drawing, hull_points, i, Scalar(0,0,255), 1, 8, vector<Vec4i>(), 0, Point() );
 
 		vector<Point>& points = contours[i];
-		cout << "number of point in the contour:" << points.size() << endl;
+		//cout << "number of point in the contour:" << points.size() << endl;
 		int largest_defect = -1;
 		int largest_fixpt_depth = -1;
+		float s3_ang = -1;
 		for(int j=0; j<defects.size(); j++){
 			Vec4i& defect = defects[j];
 			int start_index = defect[0];
 			int end_index = defect[1];
 			int farthest_pt_index = defect[2];
 			int fixpt_depth = defect[3];
-			cout << "start_index: " << start_index << endl;
-			cout << "end_index: " << end_index << endl;
-			cout << "farthest_pt_index: " << farthest_pt_index << endl;
-			cout << "fixpt_depth: " << fixpt_depth << endl;
-			cout << "--------------------------------------" << endl;
+			//cout << "start_index: " << start_index << endl;
+			//cout << "end_index: " << end_index << endl;
+			//cout << "farthest_pt_index: " << farthest_pt_index << endl;
+			//cout << "fixpt_depth: " << fixpt_depth << endl;
+			//cout << "--------------------------------------" << endl;
 			if(largest_fixpt_depth<fixpt_depth){
 				largest_fixpt_depth = fixpt_depth;
 				largest_defect = j;
+
+				Point2f s3 = points[start_index]-points[end_index];
+				mag_ang ma_s3 = calcMagAng(s3);
+				s3_ang = ma_s3.angle;
 			}
 		}
-		if(largest_defect>=0 && largest_fixpt_depth>1000){
+		if(largest_defect>=0 && s3_ang>230){
+			cout << s3_ang << endl;
 			Vec4i& defect = defects[largest_defect];
 			int start_index = defect[0];
 			int end_index = defect[1];
 			int farthest_pt_index = defect[2];
 			int fixpt_depth = defect[3];
-			Point middle((points[start_index].x+points[end_index].x)/2,
+			Point mid_point((points[start_index].x+points[end_index].x)/2,
 						 (points[start_index].y+points[end_index].y)/2);
+			
 			line(drawing, points[start_index], points[end_index], Scalar(255,0,255), 2, 8);
-			line(drawing, middle, points[farthest_pt_index], Scalar(0,255,255), 2, 8);
+			line(drawing, points[start_index], points[farthest_pt_index], Scalar(255,0,255), 2, 8);
+			line(drawing, points[end_index], points[farthest_pt_index], Scalar(255,0,255), 2, 8);
+			line(drawing, mid_point, points[farthest_pt_index], Scalar(0,255,255), 2, 8);
 			circle(drawing, points[farthest_pt_index], 3, Scalar(0,255,255), -1, 8);
+
+			Point2f s1 = points[start_index]-points[farthest_pt_index];
+			Point2f s2 = points[end_index]-points[farthest_pt_index];
+			Point2f mid = mid_point - points[farthest_pt_index];
+
+			mag_ang ma_s1 = calcMagAng(s1);
+			mag_ang ma_s2 = calcMagAng(s2);
+			mag_ang ma_mid = calcMagAng(mid);
+			//cout << "ang: " << ma_s1.angle-ma_s2.angle << endl;
+			//cout << "ratio: " << ma_s1.magnitude/ma_s2.magnitude << endl;
+			//cout << "mag: " << ma_mid.angle << endl;
+
+			features[0] = ma_s1.angle-ma_s2.angle;
+			features[1] = ma_s1.magnitude/ma_s2.magnitude;
+			features[2] = ma_mid.angle;
 		}
 	}
 
@@ -617,73 +632,15 @@ void ShadowGesture::FindConvexityDefects(){
 	namedWindow( "Hull demo", CV_WINDOW_AUTOSIZE );
 	imshow( "Hull demo", drawing );
 
-
-	//Mat hull;
-	//Mat conv;
-	//convexHull(contours[0], hull);
-	//cout << hull << endl;
-	//convexityDefects(contours[0], hull, conv);
-	//imshow("convexityDefects", conv);
-
-		//for (unsigned int i=0; i<contours.size(); i++) {
-		//	Mat contourMat(contours[i]);
-		//	Rect brect = boundingRect(contourMat);
-		//	if ( contourArea(contourMat) > 3000 ) {
-		//		Rect urect(brect.x, brect.y, brect.width, roi_height);
-		//		rectangle(screen_rgb, urect, Scalar(0,255,255));
-		//		if(urect.y<screen_height-roi_height){
-		//			vector< vector<Point2i> > icontours;
-		//			findContours(screen_cc(urect), icontours, CV_RETR_EXTERNAL , CV_CHAIN_APPROX_NONE, brect.tl());
-		//			for (unsigned int i=0; i<icontours.size(); i++) {
-		//				Mat iContourMat(icontours[i]);
-		//				Rect hrect = boundingRect(iContourMat);
-		//				Rect frect;
-		//				if(hrect.width<roi_height){
-		//					Point p(hrect.x+hrect.width/2-roi_height/2, hrect.y);
-		//					frect = Rect(p.x, p.y, roi_height, roi_height);
-		//				} else if(hrect.x == urect.x+1){
-		//					frect = Rect(hrect.x, hrect.y, roi_height, roi_height);
-		//				} else {
-		//					//stringstream s;
-		//					//s << hrect.x-urect.x;
-		//					//putText(screen_rgb, s.str(), Point(100,100), 1, 1, Scalar(0,0,255));
-		//					frect = Rect(urect.x+urect.width-roi_height, urect.y, roi_height, roi_height);
-		//				}
-		//				rectangle(screen_rgb, frect, Scalar(0,0,255));
-		//				if(frect.y<screen_height-roi_height && frect.x<screen_width-roi_height && frect.y>0 && frect.x>0){
-		//					handRects.push_back(screen_hand(frect));
-		//				}
-		//			}
-		//		}
-		//	}
-		//}
-
-
-
-
-
-
-
-
-
-
-	//Mat bin;
-	//threshold(img, bin, 100, 255, CV_THRESH_BINARY);
-	//imshow("threshold", bin);
-
-	//Mat bin8;
-	//bin.convertTo(bin8, CV_32SC1);
-	//imshow("bin8", bin8);
-
-	//vector< vector<Point> > contours;
-	//Mat hull;
-	//Mat conv;
-	//findContours(bin8, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
-	//findContours(bin8, contours, CV_RETR_FLOODFILL, CV_CHAIN_APPROX_SIMPLE);
-	//convexHull(contours, hull);
-	//convexityDefects(contours[0], hull, conv);
-	//imshow("convexityDefects", conv);
-
 	waitKey(0);
+	
+	return features;
 
+}
+
+ShadowGesture::mag_ang ShadowGesture::calcMagAng(Point2f& p){
+	Mat mag, ang;
+	cartToPolar(p.x, p.y, mag, ang, true);
+	mag_ang ma = {mag.at<double>(0), ang.at<double>(0)};
+	return ma;
 }

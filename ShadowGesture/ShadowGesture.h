@@ -27,6 +27,11 @@ public:
 	ShadowGesture(void);
 	~ShadowGesture(void);
 
+	struct mag_ang{
+		float magnitude;
+		float angle;
+	};
+
 	void capture();
 	void extract();
 	void vectorize();
@@ -35,7 +40,8 @@ public:
 	static void on_mouse(int event, int x, int y, int flags, void* param);
 	void loadImages(string dir_path, vector<string>& l);
 	Mat getPointClusters(Mat& seqs);
-	void FindConvexityDefects();
+	Vec3f FindConvexityDefects(string path);
+	mag_ang calcMagAng(Point2f& p);
 	
 	VideoCapture cap;
 
