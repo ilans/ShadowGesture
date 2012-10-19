@@ -32,7 +32,7 @@ public:
 		float angle;
 	};
 
-	void capture();
+	void capture(string path);
 	void extract();
 	void vectorize();
 	void trainHMM();
@@ -40,9 +40,12 @@ public:
 	static void on_mouse(int event, int x, int y, int flags, void* param);
 	void loadImages(string dir_path, vector<string>& l);
 	Mat getPointClusters(Mat& seqs);
-	Vec3f FindConvexityDefects(string path);
+	Mat FindConvexityDefects(string path);
+	Mat FindConvexityDefects(Mat& img);
 	mag_ang calcMagAng(Point2f& p);
-	
+	void recognizeGesture(string path);
+	void convertDataToOctaveCVS(string path);
+
 	VideoCapture cap;
 
     vector<Point2f> video_corners;
