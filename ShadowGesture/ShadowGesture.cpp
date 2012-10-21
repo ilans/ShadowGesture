@@ -943,3 +943,109 @@ void ShadowGesture::convertDataToOctaveCVS(string path){
 
 	waitKey(0);
 }
+
+void ShadowGesture::convertBinaryDataToOctaveCVS(string train_path, string test_path){
+	FileStorage fs(train_path, FileStorage::READ);
+
+	FileNode seqs_fs = fs["seqs"];
+	FileNodeIterator it = seqs_fs.begin(), it_end = seqs_fs.end();
+
+	Mat mat_all;
+	for( ; it != it_end; ++it)
+	{
+		vector<string> seq;
+		(*it) >> seq;
+		for( int i = 0; i < (int)seq.size(); i++ ){
+			Mat image = imread(seq[i]);
+			cvtColor(image, image, CV_BGR2GRAY);
+			threshold( image, image, 100, 1,THRESH_BINARY );
+			resize(image, image, Size(20,20));
+			image = image.reshape(1,1);
+			mat_all.push_back(image);
+		}
+	}
+	fs.release();
+
+	mat_all = mat_all;
+
+	cout << mat_all.rows << endl;
+	cout << mat_all.cols << endl;
+
+	Mat mean;
+	pca = PCA(mat_all, mean, CV_PCA_DATA_AS_ROW, 43);
+	cout << pca.eigenvalues.rows << endl;
+	Mat mat_pca = pca.project(mat_all);
+	cout << mat_pca.rows << endl;
+	cout << mat_pca.cols << endl;
+
+	int seq_of_frames = 4;
+	for(int i=0 ; i<mat_pca.cols ; i++){
+		stringstream i_str;
+		i_str << i;
+
+		Mat feature = mat_pca.col(i).clone();
+		feature = feature.reshape(0,mat_pca.rows/seq_of_frames).t();
+
+		stringstream csv_text;
+		csv_text << format(feature , "csv");
+
+		string csv_path = "../Data/ForOctave/binary/train/feature"+i_str.str()+".csv";
+		FILE* file = fopen(csv_path.c_str(),"w");
+		fputs(csv_text.str().c_str(), file);
+		fclose(file);
+	}
+
+
+	fs = FileStorage(test_path, FileStorage::READ);
+
+	seqs_fs = fs["seqs"];
+	it = seqs_fs.begin();
+	it_end = seqs_fs.end();
+
+	Mat mat_all_test;
+	for( ; it != it_end; ++it)
+	{
+		vector<string> seq;
+		(*it) >> seq;
+		for( int i = 0; i < (int)seq.size(); i++ ){
+			Mat image = imread(seq[i]);
+			cvtColor(image, image, CV_BGR2GRAY);
+			threshold( image, image, 100, 1,THRESH_BINARY );
+			resize(image, image, Size(20,20));
+			image = image.reshape(1,1);
+			mat_all_test.push_back(image);
+		}
+	}
+	fs.release();
+
+	cout << mat_all_test.rows << endl;
+	cout << mat_all_test.cols << endl;
+
+	Mat mat_pca_test = pca.project(mat_all_test);
+	cout << mat_pca_test.rows << endl;
+	cout << mat_pca_test.cols << endl;
+
+	for(int i=0 ; i<mat_pca_test.cols ; i++){
+		stringstream i_str;
+		i_str << i;
+
+		Mat feature = mat_pca_test.col(i).clone();
+		feature = feature.reshape(0,mat_pca_test.rows/seq_of_frames).t();
+
+		stringstream csv_text;
+		csv_text << format(feature , "csv");
+
+		string csv_path = "../Data/ForOctave/binary/test/feature"+i_str.str()+".csv";
+		FILE* file = fopen(csv_path.c_str(),"w");
+		fputs(csv_text.str().c_str(), file);
+		fclose(file);
+	}
+
+
+
+	Mat klum(5,1,CV_32F);
+	klum.zeros(5,1,CV_32F);
+	imshow( "klum",  klum);
+
+	waitKey(0);
+}

@@ -45,6 +45,7 @@ public:
 	mag_ang calcMagAng(Point2f& p);
 	void recognizeGesture(string path);
 	void convertDataToOctaveCVS(string path);
+	void convertBinaryDataToOctaveCVS(string train_path, string test_path);
 
 	VideoCapture cap;
 

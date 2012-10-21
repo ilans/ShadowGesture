@@ -16,7 +16,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	//sg->FindConvexityDefects("../Data/images/hand126_0.png");
 	//sg->recognizeGesture("../Data/making_gestures_for_testing1.m4v");
 	//sg->convertDataToOctaveCVS("../Data/train_sequense.yml");
-	sg->convertDataToOctaveCVS("../Data/test_sequense.yml");
+	//sg->convertDataToOctaveCVS("../Data/test_sequense.yml");
+	sg->convertBinaryDataToOctaveCVS("../Data/train_sequense.yml", "../Data/test_sequense.yml");
 
 	return 0;
 }
