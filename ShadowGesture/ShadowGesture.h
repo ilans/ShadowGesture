@@ -46,6 +46,7 @@ public:
 	void recognizeGesture(string path);
 	void convertDataToOctaveCVS(string path);
 	void convertBinaryDataToOctaveCVS(string train_path, string test_path);
+	void waitKeyPress();
 
 	VideoCapture cap;
 
@@ -74,6 +75,8 @@ public:
 
 	Mat centers;
 	PCA pca;
-	int label_amount;
+	int hidden_states;
+	int num_hidden_states;
+	int num_output_symbols;
 };
 

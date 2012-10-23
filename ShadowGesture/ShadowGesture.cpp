@@ -360,24 +360,112 @@ void ShadowGesture::vectorize(){
 	}
 	fs.release();
 
-	label_amount = 4;
-	Mat labels;
+	//mat_all.convertTo(mat_all, CV_32F);
+	//normalize(mat_all,mat_all);
+	//cout << "mat_all.rows: " << mat_all.rows << endl;
+	//cout << "mat_all.cols: " << mat_all.cols << endl;
 
-	mat_all.convertTo(mat_all, CV_32F);
-	normalize(mat_all,mat_all);
-	cout << mat_all << endl;
-	kmeans(mat_all, label_amount, labels, TermCriteria( CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 100, 0.1), 100, KMEANS_RANDOM_CENTERS, centers);
+	int num_frames = 4;
+	int num_observations = mat_all.rows;
+	int num_features = mat_all.cols;
+
+	int sz[] = {num_frames, num_observations/num_frames, num_features};
+	Mat mat_all_3d(3, sz, CV_32F);
+	for(int n=0; n<num_frames; n++){
+//		cout << "frame:" << n << endl;
+		for(int i=0; i<num_observations/num_frames; i++){
+//			cout << "observation:" << i << endl;
+			for(int j=0; j<num_features; j++){
+				mat_all_3d.at<float>(n,i,j) = mat_all.at<float>(num_frames*i + n, j);
+//				cout << mat_all.at<float>(num_frames*i + n, j) << " | ";
+			}
+//			cout << endl;
+		}
+//		cout << "-------------------------------------------------------------------------" << endl;
+	}
+
+	Mat mean(num_frames, num_features, CV_32F);
+//	mean.zeros(num_frames, num_features, CV_32F);
+
+	for(int n=0; n<num_frames; n++){
+		for(int j=0; j<num_features; j++){
+			mean.at<float>(n,j) = 0;
+		}
+	}
+	cout << mean << endl;
+
+	for(int n=0; n<num_frames; n++){
+		for(int i=0; i<num_observations/num_frames; i++){
+			for(int j=0; j<num_features; j++){
+				mean.at<float>(n,j) += mat_all_3d.at<float>(n,i,j);
+//				cout << mean.at<float>(n,j) << endl;
+			}
+		}
+	    mean.row(n) /= num_observations;
+	}
+
+//	cout << mean << endl;
+
+	num_hidden_states = 3;
+	num_output_symbols = 4;
+	
+	Mat center_labels;
+	kmeans(mean, num_hidden_states, center_labels, TermCriteria( CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 100, 0.1), 100, KMEANS_RANDOM_CENTERS, centers);
 
 	FileStorage fc("../Data/centers.yml", FileStorage::WRITE);
 	fc << "C" << centers;
 	fc.release();
 
-	int rows = labels.rows/label_amount;
-	Mat label_vecs = labels.reshape(0, rows);
+	Mat label_vecs = getPointClusters(mat_all_3d);
 
 	FileStorage fl("../Data/label_vecs.yml", FileStorage::WRITE);
 	fl << "L" << label_vecs;
 	fl.release();
+}
+
+Mat ShadowGesture::getPointClusters(Mat& seqs){
+	Mat centroids;
+	FileStorage fc("../Data/centers.yml", FileStorage::READ);
+	fc["C"] >> centroids;
+	fc.release();
+
+	Mat labels(54,4, CV_32F);
+	int K = centers.rows;
+
+	for(int r=0; r<4; r++){
+		for(int c=0; c<54; c++){
+	        vector<float> temp;
+			for(int j=0; j<K; j++){
+				float sq = 0;
+				for(int d=0; d<5; d++){
+	                sq += (centroids.at<float>(j,1) - seqs.at<float>(r,c,d))*(centroids.at<float>(j,1) - seqs.at<float>(r,c,d));
+				}
+				temp.push_back(sqrt(sq));
+			}
+			labels.at<float>(c,r) = min_element(temp.begin(),temp.end()) - temp.begin();
+		}
+	}
+
+	int sz[] = {54,1};
+	labels = labels.reshape(4,2,sz);
+	//for(int r=0; r<seqs.rows; ++r ){
+	//	vector<double> dist_from_clust;
+	//	for(int k=0; k<clust_num; ++k ){
+	//		Mat diff = centers.row(k)-seqs.row(r);
+	//		dist_from_clust.push_back(sqrt(sum(diff*diff.t())[0]));
+	//	}
+	//	int label = min_element(dist_from_clust.begin(),dist_from_clust.end()) - dist_from_clust.begin();
+	//	labels.push_back(label);
+	//}
+
+	//int rows = labels.rows/clust_num;
+	//Mat label_vecs = labels.reshape(0, rows);
+
+	cout << labels.rows << endl;
+	cout << labels.cols << endl;
+	cout << labels << endl;
+
+	return labels;
 }
 
 void ShadowGesture::trainHMM(){
@@ -391,11 +479,11 @@ void ShadowGesture::trainHMM(){
                             0.0 , 0.0 , 0.5 , 0.5,
                             0.0 , 0.0 , 0.0 , 1.0};
     cv::Mat TRGUESS = cv::Mat(4,4,CV_64F,TRGUESSdata).clone();
-    double EMITGUESSdata[] = {1.0/4.0 , 1.0/4.0 , 1.0/4.0 , 1.0/4.0 , 1.0/4.0 , 1.0/4.0 , 1.0/4.0 ,
-                              1.0/4.0 , 1.0/4.0 , 1.0/4.0 , 1.0/4.0 , 1.0/4.0 , 1.0/4.0 , 1.0/4.0 ,
-                              1.0/4.0 , 1.0/4.0 , 1.0/4.0 , 1.0/4.0 , 1.0/4.0 , 1.0/4.0 , 1.0/4.0 ,
-							  1.0/4.0 , 1.0/4.0 , 1.0/4.0 , 1.0/4.0 , 1.0/4.0 , 1.0/4.0 , 1.0/4.0 };
-    cv::Mat EMITGUESS = cv::Mat(4,7,CV_64F,EMITGUESSdata).clone();
+    double EMITGUESSdata[] = {1.0/4.0 , 1.0/4.0 , 1.0/4.0 , 1.0/4.0 , 1.0/4.0 ,
+                              1.0/4.0 , 1.0/4.0 , 1.0/4.0 , 1.0/4.0 , 1.0/4.0 ,
+                              1.0/4.0 , 1.0/4.0 , 1.0/4.0 , 1.0/4.0 , 1.0/4.0 ,
+							  1.0/4.0 , 1.0/4.0 , 1.0/4.0 , 1.0/4.0 , 1.0/4.0 };
+    cv::Mat EMITGUESS = cv::Mat(4,5,CV_64F,EMITGUESSdata).clone();
     double INITGUESSdata[] = {0.6 , 0.5 , 0.4, 0.1};
     cv::Mat INITGUESS = cv::Mat(1,4,CV_64F,INITGUESSdata).clone();
 
@@ -501,36 +589,6 @@ void ShadowGesture::testHMM(string path){
 		if(key == 27)//ESC
 			break;
 	}
-}
-
-Mat ShadowGesture::getPointClusters(Mat& seqs){
-	FileStorage fc("../Data/centers.yml", FileStorage::READ);
-	fc["C"] >> centers;
-	fc.release();
-
-//	Mat mat_pca = pca.project(seqs);
-
-	const int const clust_num = centers.rows;
-	Mat labels;
-
-	for(int r=0; r<seqs.rows; ++r ){
-		vector<double> dist_from_clust;
-		for(int k=0; k<clust_num; ++k ){
-			Mat diff = centers.row(k)-seqs.row(r);
-			dist_from_clust.push_back(sqrt(sum(diff*diff.t())[0]));
-		}
-		int label = min_element(dist_from_clust.begin(),dist_from_clust.end()) - dist_from_clust.begin();
-		labels.push_back(label);
-	}
-
-	int rows = labels.rows/clust_num;
-	Mat label_vecs = labels.reshape(0, rows);
-
-	//cout << label_vecs.rows << endl;
-	//cout << label_vecs.cols << endl;
-	//cout << label_vecs << endl;
-
-	return label_vecs;
 }
 
 Mat ShadowGesture::FindConvexityDefects(string path){
@@ -937,11 +995,7 @@ void ShadowGesture::convertDataToOctaveCVS(string path){
 		fclose(file);
 	}
 
-	Mat klum(5,1,CV_32F);
-	klum.zeros(5,1,CV_32F);
-	imshow( "klum",  klum);
-
-	waitKey(0);
+	waitKeyPress();
 }
 
 void ShadowGesture::convertBinaryDataToOctaveCVS(string train_path, string test_path){
@@ -973,7 +1027,8 @@ void ShadowGesture::convertBinaryDataToOctaveCVS(string train_path, string test_
 
 	Mat mean;
 	pca = PCA(mat_all, mean, CV_PCA_DATA_AS_ROW, 43);
-	cout << pca.eigenvalues.rows << endl;
+	cout << "pca.mean.rows: " << pca.mean.rows << endl;
+	cout << "pca.mean.cols: " << pca.mean.cols << endl;
 	Mat mat_pca = pca.project(mat_all);
 	cout << mat_pca.rows << endl;
 	cout << mat_pca.cols << endl;
@@ -1041,8 +1096,10 @@ void ShadowGesture::convertBinaryDataToOctaveCVS(string train_path, string test_
 		fclose(file);
 	}
 
+	waitKeyPress();
+}
 
-
+void ShadowGesture::waitKeyPress(){
 	Mat klum(5,1,CV_32F);
 	klum.zeros(5,1,CV_32F);
 	imshow( "klum",  klum);
