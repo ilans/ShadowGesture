@@ -343,185 +343,7 @@ void ShadowGesture::loadImages(string dir_path, vector<string>& l){
     closedir(dp);
 }
 
-void ShadowGesture::vectorize(){
-	FileStorage fs("../Data/train_sequense.yml", FileStorage::READ);
-
-	FileNode seqs_fs = fs["seqs"];
-	FileNodeIterator it = seqs_fs.begin(), it_end = seqs_fs.end();
-
-	Mat mat_all;
-	for( ; it != it_end; ++it)
-	{
-		vector<string> seq;
-		(*it) >> seq;
-		for( int i = 0; i < (int)seq.size(); i++ ){
-			mat_all.push_back(FindConvexityDefects(seq[i]));
-		}
-	}
-	fs.release();
-
-	//mat_all.convertTo(mat_all, CV_32F);
-	//normalize(mat_all,mat_all);
-	//cout << "mat_all.rows: " << mat_all.rows << endl;
-	//cout << "mat_all.cols: " << mat_all.cols << endl;
-
-	int num_frames = 4;
-	int num_observations = mat_all.rows;
-	int num_features = mat_all.cols;
-
-	int sz[] = {num_frames, num_observations/num_frames, num_features};
-	Mat mat_all_3d(3, sz, CV_32F);
-	for(int n=0; n<num_frames; n++){
-//		cout << "frame:" << n << endl;
-		for(int i=0; i<num_observations/num_frames; i++){
-//			cout << "observation:" << i << endl;
-			for(int j=0; j<num_features; j++){
-				mat_all_3d.at<float>(n,i,j) = mat_all.at<float>(num_frames*i + n, j);
-//				cout << mat_all.at<float>(num_frames*i + n, j) << " | ";
-			}
-//			cout << endl;
-		}
-//		cout << "-------------------------------------------------------------------------" << endl;
-	}
-
-	Mat mean(num_frames, num_features, CV_32F);
-//	mean.zeros(num_frames, num_features, CV_32F);
-
-	for(int n=0; n<num_frames; n++){
-		for(int j=0; j<num_features; j++){
-			mean.at<float>(n,j) = 0;
-		}
-	}
-	cout << mean << endl;
-
-	for(int n=0; n<num_frames; n++){
-		for(int i=0; i<num_observations/num_frames; i++){
-			for(int j=0; j<num_features; j++){
-				mean.at<float>(n,j) += mat_all_3d.at<float>(n,i,j);
-//				cout << mean.at<float>(n,j) << endl;
-			}
-		}
-	    mean.row(n) /= num_observations;
-	}
-
-//	cout << mean << endl;
-
-	num_hidden_states = 3;
-	num_output_symbols = 4;
-	
-	Mat center_labels;
-	kmeans(mean, num_hidden_states, center_labels, TermCriteria( CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 100, 0.1), 100, KMEANS_RANDOM_CENTERS, centers);
-
-	FileStorage fc("../Data/centers.yml", FileStorage::WRITE);
-	fc << "C" << centers;
-	fc.release();
-
-	Mat label_vecs = getPointClusters(mat_all_3d);
-
-	FileStorage fl("../Data/label_vecs.yml", FileStorage::WRITE);
-	fl << "L" << label_vecs;
-	fl.release();
-}
-
-Mat ShadowGesture::getPointClusters(Mat& seqs){
-	Mat centroids;
-	FileStorage fc("../Data/centers.yml", FileStorage::READ);
-	fc["C"] >> centroids;
-	fc.release();
-
-	Mat labels(54,4, CV_32F);
-	int K = centers.rows;
-
-	for(int r=0; r<4; r++){
-		for(int c=0; c<54; c++){
-	        vector<float> temp;
-			for(int j=0; j<K; j++){
-				float sq = 0;
-				for(int d=0; d<5; d++){
-	                sq += (centroids.at<float>(j,1) - seqs.at<float>(r,c,d))*(centroids.at<float>(j,1) - seqs.at<float>(r,c,d));
-				}
-				temp.push_back(sqrt(sq));
-			}
-			labels.at<float>(c,r) = min_element(temp.begin(),temp.end()) - temp.begin();
-		}
-	}
-
-	int sz[] = {54,1};
-	labels = labels.reshape(4,2,sz);
-	//for(int r=0; r<seqs.rows; ++r ){
-	//	vector<double> dist_from_clust;
-	//	for(int k=0; k<clust_num; ++k ){
-	//		Mat diff = centers.row(k)-seqs.row(r);
-	//		dist_from_clust.push_back(sqrt(sum(diff*diff.t())[0]));
-	//	}
-	//	int label = min_element(dist_from_clust.begin(),dist_from_clust.end()) - dist_from_clust.begin();
-	//	labels.push_back(label);
-	//}
-
-	//int rows = labels.rows/clust_num;
-	//Mat label_vecs = labels.reshape(0, rows);
-
-	cout << labels.rows << endl;
-	cout << labels.cols << endl;
-	cout << labels << endl;
-
-	return labels;
-}
-
-void ShadowGesture::trainHMM(){
-	Mat label_vecs;
-	FileStorage fl("../Data/label_vecs.yml", FileStorage::READ);
-	fl["L"] >> label_vecs;
-	fl.release();
-
-    double TRGUESSdata[] = {0.5 , 0.5 , 0.0, 0.0 ,
-                            0.0 , 0.5 , 0.5, 0.0 ,
-                            0.0 , 0.0 , 0.5 , 0.5,
-                            0.0 , 0.0 , 0.0 , 1.0};
-    cv::Mat TRGUESS = cv::Mat(4,4,CV_64F,TRGUESSdata).clone();
-    double EMITGUESSdata[] = {1.0/4.0 , 1.0/4.0 , 1.0/4.0 , 1.0/4.0 , 1.0/4.0 ,
-                              1.0/4.0 , 1.0/4.0 , 1.0/4.0 , 1.0/4.0 , 1.0/4.0 ,
-                              1.0/4.0 , 1.0/4.0 , 1.0/4.0 , 1.0/4.0 , 1.0/4.0 ,
-							  1.0/4.0 , 1.0/4.0 , 1.0/4.0 , 1.0/4.0 , 1.0/4.0 };
-    cv::Mat EMITGUESS = cv::Mat(4,5,CV_64F,EMITGUESSdata).clone();
-    double INITGUESSdata[] = {0.6 , 0.5 , 0.4, 0.1};
-    cv::Mat INITGUESS = cv::Mat(1,4,CV_64F,INITGUESSdata).clone();
-
-    CvHMM hmm;
-    hmm.train(label_vecs,100,TRGUESS,EMITGUESS,INITGUESS);
-    hmm.printModel(TRGUESS,EMITGUESS,INITGUESS);
-
-	FileStorage fh("../Data/hmm_params.yml", FileStorage::WRITE);
-	fh << "T" << TRGUESS;
-	fh << "E" << EMITGUESS;
-	fh << "I" << INITGUESS;
-	fh.release();
-
-	cout << label_vecs.rows << endl;
-	cout << label_vecs.cols << endl;
-	cout << label_vecs << endl;
-
-    cv::Mat pstates,forward,backward;
-    double logpseq;
-    std::cout << "\n";
-    for (int i=0;i<label_vecs.rows;i++)
-    {
-        //std::cout << "row " << i << ": " << label_vecs.row(i) << "\n";
-        hmm.decode(label_vecs.row(i),TRGUESS,EMITGUESS,INITGUESS,logpseq,pstates,forward,backward);
-        std::cout << "logpseq" << i << " " << logpseq << "\n";
-    }
-    std::cout << "\n";
-}
-
-void ShadowGesture::testHMM(string path){
-	SYSTEMTIME st;
-	GetLocalTime(&st);
-	std::cout << std::setw(2) << st.wHour << ':'
-		<< std::setw(2) << st.wMinute << ':'
-		<< std::setw(2) << st.wSecond << '.'
-		<< std::setw(3) << st.wMilliseconds << '\n';
-
-
+void ShadowGesture::vectorize(string path){
 	FileStorage fs(path, FileStorage::READ);
 
 	FileNode seqs_fs = fs["seqs"];
@@ -538,9 +360,212 @@ void ShadowGesture::testHMM(string path){
 	}
 	fs.release();
 
-	mat_all.convertTo(mat_all, CV_32F);
-	normalize(mat_all,mat_all);
-	Mat label_vecs = getPointClusters(mat_all);
+	int num_frames = 4;
+	int num_observations = mat_all.rows;
+	int num_features = mat_all.cols;
+
+	int sz[] = {num_frames, num_observations/num_frames, num_features};
+	Mat mat_all_3d(3, sz, CV_32F);
+	for(int n=0; n<num_frames; n++){
+		for(int i=0; i<num_observations/num_frames; i++){
+			for(int j=0; j<num_features; j++){
+				mat_all_3d.at<float>(n,i,j) = mat_all.at<float>(num_frames*i + n, j);
+			}
+		}
+	}
+
+	Mat mean(num_frames, num_features, CV_32F);
+
+	for(int n=0; n<num_frames; n++){
+		for(int j=0; j<num_features; j++){
+			mean.at<float>(n,j) = 0;
+		}
+	}
+
+	for(int n=0; n<num_frames; n++){
+		for(int i=0; i<num_observations/num_frames; i++){
+			for(int j=0; j<num_features; j++){
+				mean.at<float>(n,j) += mat_all_3d.at<float>(n,i,j);
+			}
+		}
+	    mean.row(n) /= num_observations;
+	}
+
+	num_hidden_states = 3;
+	num_output_symbols = 4;
+	
+	Mat center_labels;
+	kmeans(mean, num_hidden_states, center_labels, TermCriteria( CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 100, 0.1), 100, KMEANS_RANDOM_CENTERS, centers);
+
+	FileStorage fc("../Data/centers.yml", FileStorage::WRITE);
+	fc << "C" << centers;
+	fc.release();
+
+	Mat label_vecs = getPointClusters(mat_all_3d, num_frames, num_observations/num_frames, num_features);
+
+	FileStorage fl("../Data/label_vecs.yml", FileStorage::WRITE);
+	fl << "L" << label_vecs;
+	fl.release();
+}
+
+Mat ShadowGesture::getPointClusters(Mat& seqs, int num_frames, int num_observations, int num_features){
+	Mat centroids;
+	FileStorage fc("../Data/centers.yml", FileStorage::READ);
+	fc["C"] >> centroids;
+	fc.release();
+
+	Mat labels(num_observations,num_frames, CV_32S);
+	int K = centers.rows;
+
+	for(int r=0; r<num_frames; r++){
+		for(int c=0; c<num_observations; c++){
+	        vector<int> temp;
+			for(int j=0; j<K; j++){
+				float sq = 0;
+				for(int d=0; d<num_features; d++){
+	                sq += (centroids.at<float>(j,1) - seqs.at<float>(r,c,d))*(centroids.at<float>(j,1) - seqs.at<float>(r,c,d));
+				}
+				temp.push_back(sqrt(sq));
+			}
+			labels.at<int>(c,r) = min_element(temp.begin(),temp.end()) - temp.begin();
+		}
+	}
+
+	int sz[] = {num_observations,num_frames};
+	labels = labels.reshape(1,2,sz);
+
+	return labels;
+}
+
+void ShadowGesture::trainHMM(string path){
+	Mat label_vecs;
+	FileStorage fl(path, FileStorage::READ);
+	fl["L"] >> label_vecs;
+	fl.release();
+
+    double TRGUESSdata[] = {2.0/3.0 , 1.0/3.0 , 0.0/3.0  , 0.0/3.0,
+                            0.0/3.0 , 2.0/3.0 , 1.0/3.0  , 0.0/3.0,
+                            0.0/3.0 , 0.0/3.0 , 2.0/3.0  , 1.0/3.0,
+                            0.0/3.0 , 0.0/3.0 , 0.0/3.0  , 3.0/3.0};
+    cv::Mat TRGUESS = cv::Mat(4,4,CV_64F,TRGUESSdata).clone();
+    double EMITGUESSdata[] = {1.0/4.0 , 1.0/4.0 , 1.0/4.0 ,
+                              1.0/4.0 , 1.0/4.0 , 1.0/4.0 ,
+                              1.0/4.0 , 1.0/4.0 , 1.0/4.0 ,
+                              1.0/4.0 , 1.0/4.0 , 1.0/4.0 };
+    cv::Mat EMITGUESS = cv::Mat(4,3,CV_64F,EMITGUESSdata).clone();
+    double INITGUESSdata[] = {0.6  , 0.2 , 0.2, 0.2};
+    cv::Mat INITGUESS = cv::Mat(1,4,CV_64F,INITGUESSdata).clone();
+
+    CvHMM hmm;
+	hmm.train(label_vecs,100,TRGUESS,EMITGUESS,INITGUESS);
+    hmm.printModel(TRGUESS,EMITGUESS,INITGUESS);
+
+	FileStorage fh("../Data/hmm_params.yml", FileStorage::WRITE);
+	fh << "T" << TRGUESS;
+	fh << "E" << EMITGUESS;
+	fh << "I" << INITGUESS;
+	fh.release();
+
+	cout << label_vecs.rows << endl;
+	cout << label_vecs.cols << endl;
+	cout << label_vecs << endl;
+	cout << label_vecs.channels() << endl;
+	cout << label_vecs.type() << endl;
+
+    cv::Mat pstates,forward,backward;
+    double logpseq;
+    std::cout << "\n";
+    for (int i=0;i<label_vecs.rows;i++)
+    {
+        //std::cout << "row " << i << ": " << label_vecs.row(i) << "\n";
+        hmm.decode(label_vecs.row(i),TRGUESS,EMITGUESS,INITGUESS,logpseq,pstates,forward,backward);
+        std::cout << "logpseq" << i << " " << logpseq << "\n";
+    }
+    std::cout << "\n";
+
+	double sumLik = 0;
+	double minLik = numeric_limits<double>::infinity();
+	for (int j=0;j<label_vecs.rows;j++)
+	{
+		double lik = prHmm(label_vecs.row(j));
+		if (lik < minLik){
+			minLik = lik;
+		}
+		sumLik = sumLik + lik;
+	}
+	double gestureRecThreshold = 2.0*sumLik/label_vecs.rows;
+
+	cout << "gestureRecThreshold: " << gestureRecThreshold << endl;
+}
+
+double ShadowGesture::prHmm(Mat& o){
+	Mat TRANS;
+	Mat EMIS;
+	Mat INIT;
+	FileStorage fh("../Data/hmm_params.yml", FileStorage::READ);
+	fh["T"] >> TRANS;
+	fh["E"] >> EMIS;
+	fh["I"] >> INIT;
+	fh.release();
+
+	int n = TRANS.cols;
+	int T = o.cols;
+
+	Mat m(T,n,CV_64F);
+    for (int i=0;i<n;i++){
+	    m.at<double>(0,i)=EMIS.at<double>(i,o.at<int>(0,0))*INIT.at<double>(0,i);
+	}
+
+    for (int t=0;t<T-1;t++){
+	    for (int j=0;j<n;j++){
+	        double z = 0;
+		    for (int i=0;i<n;i++){
+	            z=z+TRANS.at<double>(i,j)*m.at<double>(t,i);
+			}
+	        m.at<double>(t+1,j)=z*EMIS.at<double>(j,o.at<int>(t+1));
+		}
+	}
+
+	double p = 0;
+    for (int i=0;i<n;i++){
+	    p=p+m.at<double>(T-1,i);
+	}
+
+	return log(p);
+}
+
+void ShadowGesture::testHMM(string path){
+	FileStorage fs(path, FileStorage::READ);
+
+	FileNode seqs_fs = fs["seqs"];
+	FileNodeIterator it = seqs_fs.begin(), it_end = seqs_fs.end();
+
+	Mat mat_all;
+	for( ; it != it_end; ++it)
+	{
+		vector<string> seq;
+		(*it) >> seq;
+		for( int i = 0; i < (int)seq.size(); i++ ){
+			mat_all.push_back(FindConvexityDefects(seq[i]));
+		}
+	}
+	fs.release();
+
+	int num_frames = 4;
+	int num_observations = mat_all.rows;
+	int num_features = mat_all.cols;
+
+	int sz[] = {num_frames, num_observations/num_frames, num_features};
+	Mat mat_all_3d(3, sz, CV_32F);
+	for(int n=0; n<num_frames; n++){
+		for(int i=0; i<num_observations/num_frames; i++){
+			for(int j=0; j<num_features; j++){
+				mat_all_3d.at<float>(n,i,j) = mat_all.at<float>(num_frames*i + n, j);
+			}
+		}
+	}
+
+	Mat label_vecs = getPointClusters(mat_all_3d, num_frames, num_observations/num_frames, num_features);
 
 	Mat TRANS;
 	Mat EMIS;
@@ -561,8 +586,9 @@ void ShadowGesture::testHMM(string path){
         hmm.decode(label_vecs.row(i),TRANS,EMIS,INIT,logpseq,pstates,forward,backward);
         cout << "logpseq" << i << " " << logpseq << "\n";
     }
-    //cout << "\n";
+    cout << "\n";
 
+//	waitKeyPress();
 
     //cv::Mat estates;
     ////std::cout << "\n";
@@ -576,19 +602,6 @@ void ShadowGesture::testHMM(string path){
     //}
     ////std::cout << "\n";
 
-
-	GetLocalTime(&st);
-	std::cout << std::setw(2) << st.wHour << ':'
-		<< std::setw(2) << st.wMinute << ':'
-		<< std::setw(2) << st.wSecond << '.'
-		<< std::setw(3) << st.wMilliseconds << '\n';
-
-	cout << "Done!\n";
-	for(;;){
-		int key = waitKey(30);
-		if(key == 27)//ESC
-			break;
-	}
 }
 
 Mat ShadowGesture::FindConvexityDefects(string path){
@@ -810,9 +823,21 @@ void ShadowGesture::recognizeGesture(string path){
 				if(mat_all.rows>4){
 					mat_all = mat_all(Range(1, 5),Range::all());
 
-					//mat_all.convertTo(mat_all, CV_32F);
-					normalize(mat_all,mat_all);
-					Mat label_vecs = getPointClusters(mat_all);
+					int num_frames = 4;
+					int num_observations = mat_all.rows;
+					int num_features = mat_all.cols;
+
+					int sz[] = {num_frames, num_observations/num_frames, num_features};
+					Mat mat_all_3d(3, sz, CV_32F);
+					for(int n=0; n<num_frames; n++){
+						for(int i=0; i<num_observations/num_frames; i++){
+							for(int j=0; j<num_features; j++){
+								mat_all_3d.at<float>(n,i,j) = mat_all.at<float>(num_frames*i + n, j);
+							}
+						}
+					}
+
+					Mat label_vecs = getPointClusters(mat_all_3d, num_frames, num_observations/num_frames, num_features);
 
 					Mat pstates,forward,backward;
 					double logpseq;

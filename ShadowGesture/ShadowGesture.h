@@ -34,12 +34,12 @@ public:
 
 	void capture(string path);
 	void extract();
-	void vectorize();
-	void trainHMM();
+	void vectorize(string path);
+	void trainHMM(string path);
 	void testHMM(string path);
 	static void on_mouse(int event, int x, int y, int flags, void* param);
 	void loadImages(string dir_path, vector<string>& l);
-	Mat getPointClusters(Mat& seqs);
+	Mat getPointClusters(Mat& seqs, int num_frames, int num_observations, int num_features);
 	Mat FindConvexityDefects(string path);
 	Mat FindConvexityDefects(Mat& img);
 	mag_ang calcMagAng(Point2f& p);
@@ -47,6 +47,7 @@ public:
 	void convertDataToOctaveCVS(string path);
 	void convertBinaryDataToOctaveCVS(string train_path, string test_path);
 	void waitKeyPress();
+	double prHmm(Mat& o);
 
 	VideoCapture cap;
 
