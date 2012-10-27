@@ -604,12 +604,16 @@ void ShadowGesture::testHMM(string path){
 
 }
 
-Mat ShadowGesture::FindConvexityDefects(string path){
-	Mat img = imread(path);
-	//imshow("image", img);
+Mat ShadowGesture::FindConvexityDefects(string path, Mat& image){
+	Mat img;
+	if(path.length()>0){
+		img = imread(path);
+		cvtColor(img, img, CV_RGB2GRAY);
+		threshold(img, img, 100, 255, THRESH_BINARY);
+	} else {
+		img = image.clone();
+	}
 
-	cvtColor(img, img, CV_RGB2GRAY);
-	threshold(img, img, 100, 255, THRESH_BINARY);
 //	resize(img, img, Size(20,20));
 
 	Mat img_c = img.clone();
@@ -620,11 +624,12 @@ Mat ShadowGesture::FindConvexityDefects(string path){
 
 	vector<vector<int> >hull( contours.size() );
 	vector<vector<Point> >hull_points( contours.size() );
-	vector<Vec4i>defects( contours.size() );
+	vector< vector<Vec4i> > defects( contours.size() );
 	for( int i = 0; i < contours.size(); i++ ){
 		convexHull( contours[i], hull[i]);
 		convexHull( Mat(contours[i]), hull_points[i]);
-		convexityDefects(contours[i], hull[i], defects);
+		if(contours[i].size()>2)
+			convexityDefects(contours[i], hull[i], defects[i]);
 	}
 
 	Mat features(5,1,CV_32F);
@@ -633,18 +638,19 @@ Mat ShadowGesture::FindConvexityDefects(string path){
 	/// Draw contours + hull results
 	RNG rng(12345);
 	Mat drawing = Mat::zeros( img.size(), CV_8UC3 );
+	int largest_defect = -1;
+	int largest_fixpt_depth = -1;
+	int selected_i = -1;
+	float s3_ang = -1;
 	for( int i = 0; i< contours.size(); i++ )
 	{
-		drawContours( drawing, contours, i, Scalar(255,0,0), 1, 8, vector<Vec4i>(), 0, Point() );
-		drawContours( drawing, hull_points, i, Scalar(0,0,255), 1, 8, vector<Vec4i>(), 0, Point() );
+		drawContours( drawing, contours, i, Scalar(255,0,255), 1, 8, vector<Vec4i>(), 0, Point() );
+		drawContours( drawing, hull_points, i, Scalar(255,255,255), 1, 8, vector<Vec4i>(), 0, Point() );
 
 		vector<Point>& points = contours[i];
 		//cout << "number of point in the contour:" << points.size() << endl;
-		int largest_defect = -1;
-		int largest_fixpt_depth = -1;
-		float s3_ang = -1;
-		for(int j=0; j<defects.size(); j++){
-			Vec4i& defect = defects[j];
+		for(int j=0; j<defects[i].size(); j++){
+			Vec4i& defect = defects[i][j];
 			int start_index = defect[0];
 			int end_index = defect[1];
 			int farthest_pt_index = defect[2];
@@ -657,52 +663,56 @@ Mat ShadowGesture::FindConvexityDefects(string path){
 			if(largest_fixpt_depth<fixpt_depth){
 				largest_fixpt_depth = fixpt_depth;
 				largest_defect = j;
+				selected_i = i;
 
 				Point2f s3 = points[start_index]-points[end_index];
 				mag_ang ma_s3 = calcMagAng(s3);
 				s3_ang = ma_s3.angle;
 			}
 		}
-		if(largest_defect>=0 && s3_ang>230){
-			//cout << s3_ang << endl;
-			Vec4i& defect = defects[largest_defect];
-			int start_index = defect[0];
-			int end_index = defect[1];
-			int farthest_pt_index = defect[2];
-			int fixpt_depth = defect[3];
-			Point mid_point((points[start_index].x+points[end_index].x)/2,
-						 (points[start_index].y+points[end_index].y)/2);
-			
-			line(drawing, points[start_index], points[end_index], Scalar(255,0,255), 2, 8);
-			line(drawing, points[start_index], points[farthest_pt_index], Scalar(255,0,255), 2, 8);
-			line(drawing, points[end_index], points[farthest_pt_index], Scalar(255,0,255), 2, 8);
-			line(drawing, mid_point, points[farthest_pt_index], Scalar(0,255,255), 2, 8);
-			circle(drawing, points[farthest_pt_index], 3, Scalar(0,255,255), -1, 8);
+	}
 
-			Point2f s1 = points[start_index]-points[farthest_pt_index];
-			Point2f s2 = points[end_index]-points[farthest_pt_index];
-			Point2f mid = mid_point - points[farthest_pt_index];
+	if(largest_defect>=0 && s3_ang>230){
+		vector<Point>& points = contours[selected_i];
 
-			mag_ang ma_s1 = calcMagAng(s1);
-			mag_ang ma_s2 = calcMagAng(s2);
-			mag_ang ma_mid = calcMagAng(mid);
-			//cout << "ang: " << ma_s1.angle-ma_s2.angle << endl;
-			//cout << "ratio: " << ma_s1.magnitude/ma_s2.magnitude << endl;
-			//cout << "mag: " << ma_mid.angle << endl;
+		//cout << s3_ang << endl;
+		Vec4i& defect = defects[selected_i][largest_defect];
+		int start_index = defect[0];
+		int end_index = defect[1];
+		int farthest_pt_index = defect[2];
+		int fixpt_depth = defect[3];
+		Point mid_point((points[start_index].x+points[end_index].x)/2,
+			(points[start_index].y+points[end_index].y)/2);
 
-			features.at<float>(0) = ma_s1.angle-ma_s2.angle;
-			features.at<float>(1) = ma_s1.magnitude/ma_s2.magnitude;
-			features.at<float>(2) = ma_mid.angle;
-			features.at<float>(3) = s3_ang - ma_s1.angle;
-			features.at<float>(4) = ma_mid.magnitude;
-		}
+		line(drawing, points[start_index], points[end_index], Scalar(255,0,0), 2, 8);
+		line(drawing, points[start_index], points[farthest_pt_index], Scalar(0,255,0), 2, 8);
+		line(drawing, points[end_index], points[farthest_pt_index], Scalar(0,0,255), 2, 8);
+		line(drawing, mid_point, points[farthest_pt_index], Scalar(0,255,255), 2, 8);
+		circle(drawing, points[farthest_pt_index], 3, Scalar(0,255,255), -1, 8);
+
+		Point2f s1 = points[start_index]-points[farthest_pt_index];
+		Point2f s2 = points[end_index]-points[farthest_pt_index];
+		Point2f mid = mid_point - points[farthest_pt_index];
+
+		mag_ang ma_s1 = calcMagAng(s1);
+		mag_ang ma_s2 = calcMagAng(s2);
+		mag_ang ma_mid = calcMagAng(mid);
+		//cout << "ang: " << ma_s1.angle-ma_s2.angle << endl;
+		//cout << "ratio: " << ma_s1.magnitude/ma_s2.magnitude << endl;
+		//cout << "mag: " << ma_mid.angle << endl;
+
+		features.at<float>(0) = ma_s1.angle-ma_s2.angle;
+		features.at<float>(1) = ma_s1.magnitude/ma_s2.magnitude;
+		features.at<float>(2) = ma_mid.angle;
+		features.at<float>(3) = s3_ang - ma_s1.angle;
+		features.at<float>(4) = ma_mid.magnitude;
 	}
 
 	///// Show in a window
 	//namedWindow( "Hull demo", CV_WINDOW_AUTOSIZE );
 	//imshow( "Hull demo", drawing );
-
-//	waitKey(0);
+	//imwrite( "convexity.png", drawing );
+	//waitKey(0);
 	
 	return features.t();
 
@@ -817,41 +827,51 @@ void ShadowGesture::recognizeGesture(string path){
 			}
 		}
 
-		if(play_all){
-			for (int i=0 ; i<handRects.size() ; ++i) {
-				mat_all.push_back(FindConvexityDefects(handRects[i]));
-				if(mat_all.rows>4){
-					mat_all = mat_all(Range(1, 5),Range::all());
+		if(play_all && handRects.size()>0){
+			mat_all.push_back(FindConvexityDefects("", handRects[0]));
+			hands_buf.push_back(handRects[0]);
+			if(mat_all.rows>4){
+				mat_all = mat_all(Range(1, 5),Range::all());
+				hands_buf.erase(hands_buf.begin());
 
-					int num_frames = 4;
-					int num_observations = mat_all.rows;
-					int num_features = mat_all.cols;
+				int num_frames = 4;
+				int num_observations = 1;
+				int num_features = mat_all.cols;
 
-					int sz[] = {num_frames, num_observations/num_frames, num_features};
-					Mat mat_all_3d(3, sz, CV_32F);
-					for(int n=0; n<num_frames; n++){
-						for(int i=0; i<num_observations/num_frames; i++){
-							for(int j=0; j<num_features; j++){
-								mat_all_3d.at<float>(n,i,j) = mat_all.at<float>(num_frames*i + n, j);
-							}
+				int sz[] = {num_frames, num_observations, num_features};
+				Mat mat_all_3d(3, sz, CV_32F);
+				for(int n=0; n<num_frames; n++){
+					for(int i=0; i<num_observations; i++){
+						for(int j=0; j<num_features; j++){
+							mat_all_3d.at<float>(n,i,j) = mat_all.at<float>(num_frames*i + n, j);
 						}
 					}
-
-					Mat label_vecs = getPointClusters(mat_all_3d, num_frames, num_observations/num_frames, num_features);
-
-					Mat pstates,forward,backward;
-					double logpseq;
-					//cout << "\n";
-					for (int i=0;i<label_vecs.rows;i++)
-					{
-						//cout << "row " << i << ": " << labels.row(i) << "\n";
-						hmm.decode(label_vecs.row(i),TRANS,EMIS,INIT,logpseq,pstates,forward,backward);
-						cout << "logpseq" << i << " " << logpseq << "\n";
-					}
-					cout << "-------------\n";
 				}
-				play_all = false;
+
+				Mat label_vecs = getPointClusters(mat_all_3d, num_frames, num_observations, num_features);
+
+				cout << label_vecs << endl;
+
+				Mat pstates,forward,backward;
+				double logpseq;
+				//cout << "\n";
+				for (int i=0;i<label_vecs.rows;i++)
+				{
+					//cout << "row " << i << ": " << labels.row(i) << "\n";
+					hmm.decode(label_vecs.row(i),TRANS,EMIS,INIT,logpseq,pstates,forward,backward);
+					cout << "logpseq" << i << " " << logpseq << "\n";
+				}
+				cout << "-------------\n";
 			}
+			
+			for (int i=0;i<hands_buf.size();i++)
+			{
+				stringstream i_str;
+				i_str << i;
+				imshow("hand"+i_str.str(), hands_buf[i]);
+			}
+			
+			play_all = false;
 		}
 
 		imshow("screen", screen_rgb);
@@ -886,105 +906,6 @@ void ShadowGesture::recognizeGesture(string path){
 			break;
 	}
 }
-
-
-Mat ShadowGesture::FindConvexityDefects(Mat& img){
-	Mat img_c = img.clone();
-
-	// find touch points
-	vector< vector<Point> > contours;
-	findContours(img_c, contours, CV_RETR_EXTERNAL , CV_CHAIN_APPROX_TC89_L1);
-
-	vector<vector<int> >hull( contours.size() );
-	vector<vector<Point> >hull_points( contours.size() );
-	vector< vector<Vec4i> > defects( contours.size() );
-	for( int i = 0; i < contours.size(); i++ ){
-		convexHull( contours[i], hull[i]);
-		convexHull( Mat(contours[i]), hull_points[i]);
-		if(contours[i].size()>2)
-			convexityDefects(contours[i], hull[i], defects[i]);
-	}
-
-	Mat features(5,1,CV_32F);
-	features.zeros(5,1,CV_32F);
-
-	/// Draw contours + hull results
-	RNG rng(12345);
-	Mat drawing = Mat::zeros( img.size(), CV_8UC3 );
-	for( int i = 0; i< contours.size(); i++ )
-	{
-		drawContours( drawing, contours, i, Scalar(255,0,0), 1, 8, vector<Vec4i>(), 0, Point() );
-		drawContours( drawing, hull_points, i, Scalar(0,0,255), 1, 8, vector<Vec4i>(), 0, Point() );
-
-		vector<Point>& points = contours[i];
-		int largest_defect = -1;
-		int largest_fixpt_depth = -1;
-		float s3_ang = -1;
-		for(int j=0; j<defects[i].size(); j++){
-			Vec4i& defect = defects[i][j];
-			int start_index = defect[0];
-			int end_index = defect[1];
-			int farthest_pt_index = defect[2];
-			int fixpt_depth = defect[3];
-			//cout << "start_index: " << start_index << endl;
-			//cout << "end_index: " << end_index << endl;
-			//cout << "farthest_pt_index: " << farthest_pt_index << endl;
-			//cout << "fixpt_depth: " << fixpt_depth << endl;
-			//cout << "--------------------------------------" << endl;
-			if(largest_fixpt_depth<fixpt_depth){
-				largest_fixpt_depth = fixpt_depth;
-				largest_defect = j;
-
-				Point2f s3 = points[start_index]-points[end_index];
-				mag_ang ma_s3 = calcMagAng(s3);
-				s3_ang = ma_s3.angle;
-			}
-		}
-		if(largest_defect>=0 && s3_ang>230){
-			//cout << s3_ang << endl;
-			Vec4i& defect = defects[i][largest_defect];
-			int start_index = defect[0];
-			int end_index = defect[1];
-			int farthest_pt_index = defect[2];
-			int fixpt_depth = defect[3];
-			Point mid_point((points[start_index].x+points[end_index].x)/2,
-						 (points[start_index].y+points[end_index].y)/2);
-			
-			line(drawing, points[start_index], points[end_index], Scalar(255,0,255), 2, 8);
-			line(drawing, points[start_index], points[farthest_pt_index], Scalar(255,0,255), 2, 8);
-			line(drawing, points[end_index], points[farthest_pt_index], Scalar(255,0,255), 2, 8);
-			line(drawing, mid_point, points[farthest_pt_index], Scalar(0,255,255), 2, 8);
-			circle(drawing, points[farthest_pt_index], 3, Scalar(0,255,255), -1, 8);
-
-			Point2f s1 = points[start_index]-points[farthest_pt_index];
-			Point2f s2 = points[end_index]-points[farthest_pt_index];
-			Point2f mid = mid_point - points[farthest_pt_index];
-
-			mag_ang ma_s1 = calcMagAng(s1);
-			mag_ang ma_s2 = calcMagAng(s2);
-			mag_ang ma_mid = calcMagAng(mid);
-			//cout << "ang: " << ma_s1.angle-ma_s2.angle << endl;
-			//cout << "ratio: " << ma_s1.magnitude/ma_s2.magnitude << endl;
-			//cout << "mag: " << ma_mid.angle << endl;
-
-			features.at<float>(0) = ma_s1.angle-ma_s2.angle;
-			features.at<float>(1) = ma_s1.magnitude/ma_s2.magnitude;
-			features.at<float>(2) = ma_mid.angle;
-			features.at<float>(3) = s3_ang - ma_s1.angle;
-			features.at<float>(4) = ma_mid.magnitude;
-		}
-	}
-
-	/// Show in a window
-	namedWindow( "Hull demo", CV_WINDOW_AUTOSIZE );
-	imshow( "Hull demo", drawing );
-
-//	waitKey(0);
-	
-	return features.t();
-
-}
-
 
 void ShadowGesture::convertDataToOctaveCVS(string path){
 	FileStorage fs(path, FileStorage::READ);

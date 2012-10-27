@@ -114,8 +114,8 @@ public:
 		int nstates = TRANS.cols;		
 		int nobs = EMIS.cols;		
 		cv::Mat v(nstates,nseq,CV_64F);
-		cv::Mat path(nstates,nseq,CV_32S); path = 0;
-		cv::Mat newpath(nstates,nseq,CV_32S); newpath = 0;
+        cv::Mat path(nstates,nseq,CV_32S); path = 0.0f;
+        cv::Mat newpath(nstates,nseq,CV_32S); newpath = 0.0f;
 		for (int y=0;y<nstates;y++)
 		{
 			v.at<double>(y,0) = log(INIT.at<double>(0,y)) + log(EMIS.at<double>(y,seq.at<int>(0,0)));
@@ -159,7 +159,7 @@ public:
 	}
 
 	/*  Calculates the posterior state probabilities of a sequence of emissions */
-	static void decode(const cv::Mat &seq,const cv::Mat &_TRANS,const cv::Mat &_EMIS, const cv::Mat &_INIT, double &logpseq, cv::Mat &PSTATES = cv::Mat(), cv::Mat &FORWARD = cv::Mat(), cv::Mat &BACKWARD = cv::Mat())
+    static void decode(const cv::Mat &seq,const cv::Mat &_TRANS,const cv::Mat &_EMIS, const cv::Mat &_INIT, double &logpseq, cv::Mat &PSTATES, cv::Mat &FORWARD, cv::Mat &BACKWARD)
 	{
 		/* A Revealing Introduction to Hidden Markov Models, Mark Stamp */
 		// 1. Initialization

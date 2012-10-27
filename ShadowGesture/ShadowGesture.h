@@ -40,8 +40,7 @@ public:
 	static void on_mouse(int event, int x, int y, int flags, void* param);
 	void loadImages(string dir_path, vector<string>& l);
 	Mat getPointClusters(Mat& seqs, int num_frames, int num_observations, int num_features);
-	Mat FindConvexityDefects(string path);
-	Mat FindConvexityDefects(Mat& img);
+	Mat FindConvexityDefects(string path, Mat& image = Mat());
 	mag_ang calcMagAng(Point2f& p);
 	void recognizeGesture(string path);
 	void convertDataToOctaveCVS(string path);
@@ -79,5 +78,8 @@ public:
 	int hidden_states;
 	int num_hidden_states;
 	int num_output_symbols;
+
+	vector<Mat> hands_buf;
 };
+
 
