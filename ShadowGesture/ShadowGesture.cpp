@@ -708,9 +708,9 @@ Mat ShadowGesture::FindConvexityDefects(string path, Mat& image){
 		features.at<float>(4) = ma_mid.magnitude;
 	}
 
-	///// Show in a window
-	//namedWindow( "Hull demo", CV_WINDOW_AUTOSIZE );
-	//imshow( "Hull demo", drawing );
+	/// Show in a window
+	namedWindow( "Hull demo", CV_WINDOW_AUTOSIZE );
+	imshow( "Hull demo", drawing );
 	//imwrite( "convexity.png", drawing );
 	//waitKey(0);
 	
@@ -864,12 +864,17 @@ void ShadowGesture::recognizeGesture(string path){
 				cout << "-------------\n";
 			}
 			
+			Mat hands;
 			for (int i=0;i<hands_buf.size();i++)
 			{
-				stringstream i_str;
-				i_str << i;
-				imshow("hand"+i_str.str(), hands_buf[i]);
+				//stringstream i_str;
+				//i_str << i;
+				//imshow("hand"+i_str.str(), hands_buf[i]);
+				cout << hands_buf[i].type() << endl;
+				hands.push_back(hands_buf[i]);
+//				hands_buf[i].copyTo(hands(Rect(hands_buf[i].cols*i, 0, hands_buf[i].cols, hands_buf[i].rows)));
 			}
+			imshow("hands",hands);
 			
 			play_all = false;
 		}

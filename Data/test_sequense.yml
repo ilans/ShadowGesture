@@ -1,0 +1,52 @@
+%YAML:1.0
+seqs:
+   -
+      - "../Data/images/hand385_0.png"
+      - "../Data/images/hand386_0.png"
+      - "../Data/images/hand387_0.png"
+      - "../Data/images/hand388_0.png"
+   -
+      - "../Data/images/hand731_0.png"
+      - "../Data/images/hand732_0.png"
+      - "../Data/images/hand733_0.png"
+      - "../Data/images/hand734_0.png"
+   -
+      - "../Data/images/hand712_0.png"
+      - "../Data/images/hand713_0.png"
+      - "../Data/images/hand714_0.png"
+      - "../Data/images/hand715_0.png"
+   -
+      - "../Data/images/hand468_0.png"
+      - "../Data/images/hand469_0.png"
+      - "../Data/images/hand470_0.png"
+      - "../Data/images/hand471_0.png"
+   -
+      - "../Data/images/hand153_0.png"
+      - "../Data/images/hand154_0.png"
+      - "../Data/images/hand155_0.png"
+      - "../Data/images/hand156_0.png"
+   -
+      - "../Data/images-all/hand97_0.png"
+      - "../Data/images-all/hand98_0.png"
+      - "../Data/images-all/hand99_0.png"
+      - "../Data/images-all/hand100_0.png"
+   -
+      - "../Data/images-all/hand116_0.png"
+      - "../Data/images-all/hand117_0.png"
+      - "../Data/images-all/hand118_0.png"
+      - "../Data/images-all/hand119_0.png"
+   -
+      - "../Data/images-all/hand747_0.png"
+      - "../Data/images-all/hand748_0.png"
+      - "../Data/images-all/hand749_0.png"
+      - "../Data/images-all/hand750_0.png"
+   -
+      - "../Data/images-all/hand963_0.png"
+      - "../Data/images-all/hand964_0.png"
+      - "../Data/images-all/hand965_0.png"
+      - "../Data/images-all/hand966_0.png"
+   -
+      - "../Data/images-all/hand1010_0.png"
+      - "../Data/images-all/hand1011_0.png"
+      - "../Data/images-all/hand1012_0.png"
+      - "../Data/images-all/hand1013_0.png"

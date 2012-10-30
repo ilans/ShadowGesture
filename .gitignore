@@ -17,7 +17,6 @@
 ####################
 # Directories #
 ###############
-Data/
 bin/
 ipch/
 Release/
@@ -30,3 +29,7 @@ Debug/
 ehthumbs.db
 Icon?
 Thumbs.db
+# LArge files #
+######################
+*.m4v
+*.mov

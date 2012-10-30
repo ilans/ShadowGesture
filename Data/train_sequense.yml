@@ -1,0 +1,272 @@
+%YAML:1.0
+seqs:
+   -
+      - "../Data/images/hand125_0.png"
+      - "../Data/images/hand126_0.png"
+      - "../Data/images/hand127_0.png"
+      - "../Data/images/hand128_0.png"
+   -
+      - "../Data/images/hand140_0.png"
+      - "../Data/images/hand141_0.png"
+      - "../Data/images/hand142_0.png"
+      - "../Data/images/hand143_0.png"
+   -
+      - "../Data/images/hand167_0.png"
+      - "../Data/images/hand168_0.png"
+      - "../Data/images/hand169_0.png"
+      - "../Data/images/hand170_0.png"
+   -
+      - "../Data/images/hand180_0.png"
+      - "../Data/images/hand181_0.png"
+      - "../Data/images/hand182_0.png"
+      - "../Data/images/hand183_0.png"
+   -
+      - "../Data/images/hand194_0.png"
+      - "../Data/images/hand195_0.png"
+      - "../Data/images/hand196_0.png"
+      - "../Data/images/hand197_0.png"
+   -
+      - "../Data/images/hand208_0.png"
+      - "../Data/images/hand209_0.png"
+      - "../Data/images/hand210_0.png"
+      - "../Data/images/hand211_0.png"
+   -
+      - "../Data/images/hand219_0.png"
+      - "../Data/images/hand220_0.png"
+      - "../Data/images/hand221_0.png"
+      - "../Data/images/hand222_0.png"
+   -
+      - "../Data/images/hand228_0.png"
+      - "../Data/images/hand229_0.png"
+      - "../Data/images/hand230_0.png"
+      - "../Data/images/hand231_0.png"
+   -
+      - "../Data/images/hand236_0.png"
+      - "../Data/images/hand237_0.png"
+      - "../Data/images/hand238_0.png"
+      - "../Data/images/hand239_0.png"
+   -
+      - "../Data/images/hand269_0.png"
+      - "../Data/images/hand270_0.png"
+      - "../Data/images/hand271_0.png"
+      - "../Data/images/hand272_0.png"
+   -
+      - "../Data/images/hand283_0.png"
+      - "../Data/images/hand284_0.png"
+      - "../Data/images/hand285_0.png"
+      - "../Data/images/hand286_0.png"
+   -
+      - "../Data/images/hand292_0.png"
+      - "../Data/images/hand293_0.png"
+      - "../Data/images/hand294_0.png"
+      - "../Data/images/hand295_0.png"
+   -
+      - "../Data/images/hand299_0.png"
+      - "../Data/images/hand300_0.png"
+      - "../Data/images/hand301_0.png"
+      - "../Data/images/hand302_0.png"
+   -
+      - "../Data/images/hand307_0.png"
+      - "../Data/images/hand308_0.png"
+      - "../Data/images/hand309_0.png"
+      - "../Data/images/hand310_0.png"
+   -
+      - "../Data/images/hand317_0.png"
+      - "../Data/images/hand318_0.png"
+      - "../Data/images/hand319_0.png"
+      - "../Data/images/hand320_0.png"
+   -
+      - "../Data/images/hand328_0.png"
+      - "../Data/images/hand329_0.png"
+      - "../Data/images/hand330_0.png"
+      - "../Data/images/hand331_0.png"
+   -
+      - "../Data/images/hand339_0.png"
+      - "../Data/images/hand340_0.png"
+      - "../Data/images/hand341_0.png"
+      - "../Data/images/hand342_0.png"
+   -
+      - "../Data/images/hand347_0.png"
+      - "../Data/images/hand348_0.png"
+      - "../Data/images/hand349_0.png"
+      - "../Data/images/hand350_0.png"
+   -
+      - "../Data/images/hand356_0.png"
+      - "../Data/images/hand357_0.png"
+      - "../Data/images/hand358_0.png"
+      - "../Data/images/hand359_0.png"
+   -
+      - "../Data/images/hand365_0.png"
+      - "../Data/images/hand366_0.png"
+      - "../Data/images/hand367_0.png"
+      - "../Data/images/hand368_0.png"
+   -
+      - "../Data/images/hand375_0.png"
+      - "../Data/images/hand376_0.png"
+      - "../Data/images/hand377_0.png"
+      - "../Data/images/hand378_0.png"
+   -
+      - "../Data/images/hand393_0.png"
+      - "../Data/images/hand394_0.png"
+      - "../Data/images/hand395_0.png"
+      - "../Data/images/hand396_0.png"
+   -
+      - "../Data/images/hand402_0.png"
+      - "../Data/images/hand403_0.png"
+      - "../Data/images/hand404_0.png"
+      - "../Data/images/hand405_0.png"
+   -
+      - "../Data/images/hand412_0.png"
+      - "../Data/images/hand413_0.png"
+      - "../Data/images/hand414_0.png"
+      - "../Data/images/hand415_0.png"
+   -
+      - "../Data/images/hand422_0.png"
+      - "../Data/images/hand423_0.png"
+      - "../Data/images/hand424_0.png"
+      - "../Data/images/hand425_0.png"
+   -
+      - "../Data/images/hand432_0.png"
+      - "../Data/images/hand433_0.png"
+      - "../Data/images/hand434_0.png"
+      - "../Data/images/hand435_0.png"
+   -
+      - "../Data/images/hand441_0.png"
+      - "../Data/images/hand442_0.png"
+      - "../Data/images/hand443_0.png"
+      - "../Data/images/hand444_0.png"
+   -
+      - "../Data/images/hand450_0.png"
+      - "../Data/images/hand451_0.png"
+      - "../Data/images/hand452_0.png"
+      - "../Data/images/hand453_0.png"
+   -
+      - "../Data/images/hand459_0.png"
+      - "../Data/images/hand460_0.png"
+      - "../Data/images/hand461_0.png"
+      - "../Data/images/hand462_0.png"
+   -
+      - "../Data/images/hand478_0.png"
+      - "../Data/images/hand479_0.png"
+      - "../Data/images/hand480_0.png"
+      - "../Data/images/hand481_0.png"
+   -
+      - "../Data/images/hand488_0.png"
+      - "../Data/images/hand489_0.png"
+      - "../Data/images/hand490_0.png"
+      - "../Data/images/hand491_0.png"
+   -
+      - "../Data/images/hand498_0.png"
+      - "../Data/images/hand499_0.png"
+      - "../Data/images/hand500_0.png"
+      - "../Data/images/hand501_0.png"
+   -
+      - "../Data/images/hand508_0.png"
+      - "../Data/images/hand509_0.png"
+      - "../Data/images/hand510_0.png"
+      - "../Data/images/hand511_0.png"
+   -
+      - "../Data/images/hand517_0.png"
+      - "../Data/images/hand518_0.png"
+      - "../Data/images/hand519_0.png"
+      - "../Data/images/hand520_0.png"
+   -
+      - "../Data/images/hand527_0.png"
+      - "../Data/images/hand528_0.png"
+      - "../Data/images/hand529_0.png"
+      - "../Data/images/hand530_0.png"
+   -
+      - "../Data/images/hand536_0.png"
+      - "../Data/images/hand537_0.png"
+      - "../Data/images/hand538_0.png"
+      - "../Data/images/hand539_0.png"
+   -
+      - "../Data/images/hand546_0.png"
+      - "../Data/images/hand547_0.png"
+      - "../Data/images/hand548_0.png"
+      - "../Data/images/hand549_0.png"
+   -
+      - "../Data/images/hand555_0.png"
+      - "../Data/images/hand556_0.png"
+      - "../Data/images/hand557_0.png"
+      - "../Data/images/hand558_0.png"
+   -
+      - "../Data/images/hand642_0.png"
+      - "../Data/images/hand643_0.png"
+      - "../Data/images/hand644_0.png"
+      - "../Data/images/hand645_0.png"
+   -
+      - "../Data/images/hand702_0.png"
+      - "../Data/images/hand703_0.png"
+      - "../Data/images/hand704_0.png"
+      - "../Data/images/hand705_0.png"
+   -
+      - "../Data/images/hand722_0.png"
+      - "../Data/images/hand723_0.png"
+      - "../Data/images/hand724_0.png"
+      - "../Data/images/hand725_0.png"
+   -
+      - "../Data/images/hand795_0.png"
+      - "../Data/images/hand796_0.png"
+      - "../Data/images/hand797_0.png"
+      - "../Data/images/hand798_0.png"
+   -
+      - "../Data/images/hand804_0.png"
+      - "../Data/images/hand805_0.png"
+      - "../Data/images/hand806_0.png"
+      - "../Data/images/hand807_0.png"
+   -
+      - "../Data/images/hand812_0.png"
+      - "../Data/images/hand813_0.png"
+      - "../Data/images/hand814_0.png"
+      - "../Data/images/hand815_0.png"
+   -
+      - "../Data/images/hand851_0.png"
+      - "../Data/images/hand852_0.png"
+      - "../Data/images/hand853_0.png"
+      - "../Data/images/hand854_0.png"
+   -
+      - "../Data/images/hand863_0.png"
+      - "../Data/images/hand864_0.png"
+      - "../Data/images/hand865_0.png"
+      - "../Data/images/hand866_0.png"
+   -
+      - "../Data/images/hand874_0.png"
+      - "../Data/images/hand875_0.png"
+      - "../Data/images/hand876_0.png"
+      - "../Data/images/hand877_0.png"
+   -
+      - "../Data/images/hand886_0.png"
+      - "../Data/images/hand887_0.png"
+      - "../Data/images/hand888_0.png"
+      - "../Data/images/hand889_0.png"
+   -
+      - "../Data/images/hand947_0.png"
+      - "../Data/images/hand948_0.png"
+      - "../Data/images/hand949_0.png"
+      - "../Data/images/hand952_0.png"
+   -
+      - "../Data/images/hand974_0.png"
+      - "../Data/images/hand975_0.png"
+      - "../Data/images/hand976_0.png"
+      - "../Data/images/hand977_0.png"
+   -
+      - "../Data/images/hand984_0.png"
+      - "../Data/images/hand985_0.png"
+      - "../Data/images/hand986_0.png"
+      - "../Data/images/hand987_0.png"
+   -
+      - "../Data/images/hand994_0.png"
+      - "../Data/images/hand995_0.png"
+      - "../Data/images/hand996_0.png"
+      - "../Data/images/hand997_0.png"
+   -
+      - "../Data/images/hand1002_0.png"
+      - "../Data/images/hand1003_0.png"
+      - "../Data/images/hand1004_0.png"
+      - "../Data/images/hand1005_0.png"
+   -
+      - "../Data/images/hand1012_0.png"
+      - "../Data/images/hand1013_0.png"
+      - "../Data/images/hand1014_0.png"
+      - "../Data/images/hand1015_0.png"
